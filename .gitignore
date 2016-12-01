@@ -56,3 +56,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+# Tensorflow Stuff
+DataScraping/RawData
+GloVeData
+ProcessedData
