@@ -2,16 +2,13 @@
 import csv
 from bs4 import BeautifulSoup
 import urllib.request
+from scrapeTools import dic2csv
 from urllib.request import urlopen
 import sys
 
-def dic2csv(dicti):
-        with open('testfile3.csv', 'w') as f:
-                w = csv.DictWriter(f,dicti[0].keys())
-                w.writeheader()
-                w.writerows(dicti)
-
 BASE_URL = "https://www.buzzfeed.com"
+FILE_PATH = "RawData/buzzFeedData"
+
 
 def get_archive_links(archive_link):
 	html = urlopen(archive_link).read()
@@ -54,14 +51,14 @@ for i in range(1,13):
 				headline = get_article_headline(article,archive[33:len(archive)])
 				data.append(headline)
 			except urllib.error.HTTPError:
-				dic2csv(data)
+				dic2csv(data, FILE_PATH)
 				print("oh no there was a http error fuck")
 			artCount = artCount + 1
 			if(artCount % 10 == 0):
 				print(str(artCount*100/maxArticles)+"%")
 			if(artCount % 1000 == 0):
-				dic2csv(data)
+				dic2csv(data, FILE_PATH)
 		print(str(artCount)+" many articles have been scraped, out of a max of "+str(maxArticles))
 	if artCount  >= maxArticles:
 		break
-dic2csv(data)
+dic2csv(data, FILE_PATH)
