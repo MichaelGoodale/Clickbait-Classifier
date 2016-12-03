@@ -47,12 +47,12 @@ def bias_variable(shape, name):
     initial = tf.constant(0.1, shape=shape)
     return tf.Variable(initial, name=name)
 
-def conv2d(x, W, b):
-    return tf.nn.relu(tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding= "SAME" ) + b)
+def conv2d(x, filter, b):
+    return tf.nn.relu(tf.nn.conv2d(x, filter, strides=[1, 1, 1, 1], padding= "SAME" ) + b)
 
-def max_pool(x , window_size):
-      return tf.nn.max_pool(x, ksize=[1, 1, SENTENCE_MAX*WORD_VECTOR_SIZE, 1],
-                        strides=[1, 1, SENTENCE_MAX*WORD_VECTOR_SIZE, 1], padding="SAME")
+def max_pool(x, window_size):
+      return tf.nn.max_pool(x, ksize=[1, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], strides=[1, 1, SENTENCE_MAX*WORD_VECTOR_SIZE, 1], padding="SAME")
+	  
 def get_batch(x, i):
     i=i % (data_size // BATCH_SIZE)
     if x.ndim == 2:
@@ -70,12 +70,11 @@ with tf.name_scope("Convolution") as scope:
     conv_filters = []
     conv_ops = []
     max_pools = []
-    bias = bias_variable([1, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], "Convolution_Bias")
     for i in h:
-        conv_filters.append(weight_variable([1,WORD_VECTOR_SIZE*i,1,FILTER_AMOUNT], "ConvFilter_"+str(i)))
-        conv_ops.append(conv2d(sentence_placeholder, conv_filters[i-h[0]],bias))
+        conv_filters.append(weight_variable([1, WORD_VECTOR_SIZE*i, 1, FILTER_AMOUNT], "ConvFilter_"+str(i)))
+        conv_ops.append(conv2d(sentence_placeholder, conv_filters[i-h[0]], bias_variable([1, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], "Conv_Bias")))
         max_pools.append(max_pool(conv_ops[i-h[0]],i))
-    max_pooled = tf.squeeze(tf.concat(3,max_pools))
+    max_pooled = tf.squeeze(tf.concat(3, max_pools))
 
 
 dropped_out = tf.nn.dropout(max_pooled, KEEP_PROBABILITY)
@@ -84,7 +83,7 @@ dropped_out = tf.nn.dropout(max_pooled, KEEP_PROBABILITY)
 with tf.name_scope("Softmax") as scope:
     softmax_bias = bias_variable([1,2], "Softmax_Bias")
     softmax_weight = weight_variable([len(h)*FILTER_AMOUNT,2], "Softmax_Weights")
-    soft_model = tf.nn.softmax(tf.matmul(dropped_out,softmax_weight) + softmax_bias, name = "Softmax_Model")
+    soft_model = tf.nn.softmax(tf.matmul(dropped_out, softmax_weight) + softmax_bias, name = "Softmax_Model")
 
 values, indices = tf.nn.top_k(soft_model, 2)
 classes = tf.contrib.lookup.index_to_string(tf.to_int64(indices), mapping=CLASS_NAMES)
@@ -114,9 +113,11 @@ with tf.name_scope("Metrics") as scope:
     f1_score = tf.scalar_summary("F1 Score", (2*precision*recall)/(precision+recall))
     summaries = tf.merge_all_summaries()
 
+
 #Initalisation
-sess=tf.Session()
-sess.run(tf.initialize_all_variables())
+sess=tf.Session(config=tf.ConfigProto(device_count = {'GPU': 0}))
+init_op = tf.global_variables_initializer()
+sess.run(init_op)
 train_writer = tf.train.SummaryWriter("Train", graph = sess.graph)
 test_writer = tf.train.SummaryWriter("Test", graph = sess.graph)
 
@@ -141,7 +142,6 @@ for step in range(steps):
         save = saver.save(sess, "savedModels/model.ckpt")
 
 export_path = "exportedModel"
-init_op = tf.group(tf.initialize_all_tables(), name='init_op')
 model_exporter = exporter.Exporter(saver)
 model_exporter.init(
     sess.graph.as_graph_def(),
