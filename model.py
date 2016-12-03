@@ -2,7 +2,8 @@ import tensorflow as tf
 import numpy as np
 from tensorflow.contrib.session_bundle import exporter
 
-SAVE_BOOLEAN = True
+SAVE_MODEL = True
+LOAD_MODEL = False
 CLASS_NAMES = tf.constant(["News", "Clickbait"])
 
 ##Model hyperparams
@@ -12,10 +13,10 @@ WORD_VECTOR_SIZE = 50 #The dimensionality of the word vectors
 SENTENCE_MAX = 30 #Number of words to pad the sentence to
 FILTER_AMOUNT= 100 #number of filters per window size
 h = [3,4,5] #differing window sizes
-NUMBER_EPOCHS = 1
+NUMBER_EPOCHS = 30
 
 def data_load(data_path, label_path):
-    X = np.loadtxt(data_path)
+    X = np.loadtxt(data_path, dtype=np.float32)
     Y = np.loadtxt(label_path, dtype=np.int32)
     Y = np.eye(2)[Y]
     X = X[:, np.newaxis, :, np.newaxis]
@@ -27,14 +28,9 @@ test_data, test_labels = data_load("ProcessedData/testData.txt","ProcessedData/t
 #Data information
 sentence_size = data.shape[1]
 data_size = data.shape[0]-data.shape[0]%BATCH_SIZE
-data=data[0:data_size,:] #This gets rid of data that can't fit in a batch.
-labels = labels[0:data_size]
 
 #Calculate number of steps necessary
 steps = NUMBER_EPOCHS*(data_size//BATCH_SIZE)
-
-print(data_size)
-print(steps)
  
 sentence_placeholder = tf.placeholder(tf.float32, shape=[None, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], name="Batch_Data")
 labels_placeholder = tf.placeholder(tf.float32, shape=[None,2], name="Batch_Labels")
@@ -50,15 +46,15 @@ def bias_variable(shape, name):
 def conv2d(x, filter, b):
     return tf.nn.relu(tf.nn.conv2d(x, filter, strides=[1, 1, 1, 1], padding= "SAME" ) + b)
 
-def max_pool(x, window_size):
-      return tf.nn.max_pool(x, ksize=[1, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], strides=[1, 1, SENTENCE_MAX*WORD_VECTOR_SIZE, 1], padding="SAME")
+def max_pool(x):
+      return tf.reduce_max(x, axis=2,keep_dims=True)
 	  
 def get_batch(x, i):
-    i=i % (data_size // BATCH_SIZE)
+    i = i % (data_size // BATCH_SIZE)
     if x.ndim == 2:
-        return x[i*BATCH_SIZE:i*BATCH_SIZE+BATCH_SIZE, :]
+        return x[i*BATCH_SIZE: i*BATCH_SIZE+BATCH_SIZE, :]
     else:
-        return x[i*BATCH_SIZE:i*BATCH_SIZE+BATCH_SIZE, :, :, :]
+        return x[i*BATCH_SIZE: i*BATCH_SIZE+BATCH_SIZE, :, :, :]
 
 def shuffle_data(x, y):
     assert len(x) == len(y)
@@ -73,7 +69,7 @@ with tf.name_scope("Convolution") as scope:
     for i in h:
         conv_filters.append(weight_variable([1, WORD_VECTOR_SIZE*i, 1, FILTER_AMOUNT], "ConvFilter_"+str(i)))
         conv_ops.append(conv2d(sentence_placeholder, conv_filters[i-h[0]], bias_variable([1, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], "Conv_Bias")))
-        max_pools.append(max_pool(conv_ops[i-h[0]],i))
+        max_pools.append(max_pool(conv_ops[i-h[0]]))
     max_pooled = tf.squeeze(tf.concat(3, max_pools))
 
 
@@ -115,7 +111,7 @@ with tf.name_scope("Metrics") as scope:
 
 
 #Initalisation
-sess=tf.Session(config=tf.ConfigProto(device_count = {'GPU': 0}))
+sess=tf.Session()
 init_op = tf.global_variables_initializer()
 sess.run(init_op)
 train_writer = tf.train.SummaryWriter("Train", graph = sess.graph)
@@ -124,21 +120,26 @@ test_writer = tf.train.SummaryWriter("Test", graph = sess.graph)
 #Saver
 saver = tf.train.Saver(sharded=True)
 
-#Uncomment to continue training
-#saver.restore(sess,"savedModels/model.ckpt")
+if LOAD_MODEL:
+    saver.restore(sess,"savedModels/model.ckpt")
 
 for step in range(steps):
-    if step % data_size ==0 :#shuffle dataset for each epoch
+    if step % (data_size//BATCH_SIZE) == 0 :#shuffle dataset for each epoch
         data,labels = shuffle_data(data, labels)
     data_batch = get_batch(data, step)
     labels_batch = get_batch(labels, step)
     summary, _  = sess.run([summaries, train_op], feed_dict={sentence_placeholder:data_batch, labels_placeholder:labels_batch})
     train_writer.add_summary(summary, step)
+    print("Step "+ str(step+1) + " out of "+str(steps))
+    
+    if step%100 == 0:
+        print(sess.run(cross_entropy, feed_dict = {sentence_placeholder:data_batch, labels_placeholder:labels_batch}))
+    
     if step%500 == 0:
         summary = sess.run(summaries, feed_dict = {sentence_placeholder:test_data, labels_placeholder:test_labels})
         test_writer.add_summary(summary, step)
     #Model Saving
-    if (step%1000==0 and SAVE_BOOLEAN):
+    if (step%1000==0 and SAVE_MODEL):
         save = saver.save(sess, "savedModels/model.ckpt")
 
 export_path = "exportedModel"
