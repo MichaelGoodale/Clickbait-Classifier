@@ -38,7 +38,7 @@ def main(_):
     request = predict_pb2.PredictRequest()
     request.model_spec.name = "clickbait"
     request.inputs["sentences"].CopyFrom(tf.contrib.util.make_tensor_proto(data, dtype = tf.float32))
-    request.inputs["dropout"].CopyFrom(tf.contrib.util.make_tensor_proto(np.ones([]), dtype=tf.float32))
+    request.inputs["dropout"].CopyFrom(tf.contrib.util.make_tensor_proto(np.array(1), dtype=tf.float32))
     result = stub.Predict(request, 15.0)
     print(result)
 
