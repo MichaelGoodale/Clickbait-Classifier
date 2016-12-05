@@ -147,8 +147,7 @@ model_exporter = exporter.Exporter(saver)
 model_exporter.init(
     sess.graph.as_graph_def(),
     init_op=init_op,
-    default_graph_signature = exporter.classification_signature(input_tensor = sentence_placeholder,classes_tensor = classes, scores_tensor = values),
     named_graph_signatures = {
         "inputs": exporter.generic_signature({"sentences": sentence_placeholder, "dropout": drop_out_prob}),
-        "outputs": exporter.generic_signature({"scores": soft_model})})
+        "outputs": exporter.generic_signature({"scores": soft_model, "classes": CLASS_NAMES})})
 model_exporter.export(export_path,tf.constant(1), sess)
