@@ -13,7 +13,7 @@ WORD_VECTOR_SIZE = 50 #The dimensionality of the word vectors
 SENTENCE_MAX = 30 #Number of words to pad the sentence to
 FILTER_AMOUNT= 100 #number of filters per window size
 h = [3,4,5] #differing window sizes
-NUMBER_EPOCHS = 30
+NUMBER_EPOCHS = 2
 
 def data_load(data_path, label_path):
     X = np.loadtxt(data_path, dtype=np.float32)
@@ -34,6 +34,7 @@ steps = NUMBER_EPOCHS*(data_size//BATCH_SIZE)
  
 sentence_placeholder = tf.placeholder(tf.float32, shape=[None, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], name="Batch_Data")
 labels_placeholder = tf.placeholder(tf.float32, shape=[None,2], name="Batch_Labels")
+drop_out_prob = tf.placeholder(tf.float32,shape=())
 
 def weight_variable(shape, name):
     initial = tf.truncated_normal(shape, stddev=0.1)
@@ -70,10 +71,9 @@ with tf.name_scope("Convolution") as scope:
         conv_filters.append(weight_variable([1, WORD_VECTOR_SIZE*i, 1, FILTER_AMOUNT], "ConvFilter_"+str(i)))
         conv_ops.append(conv2d(sentence_placeholder, conv_filters[i-h[0]], bias_variable([1, 1, WORD_VECTOR_SIZE*SENTENCE_MAX, 1], "Conv_Bias")))
         max_pools.append(max_pool(conv_ops[i-h[0]]))
-    max_pooled = tf.squeeze(tf.concat(3, max_pools))
+    max_pooled = tf.squeeze(tf.concat(3, max_pools), [1, 2])
 
-
-dropped_out = tf.nn.dropout(max_pooled, KEEP_PROBABILITY)
+dropped_out = tf.nn.dropout(max_pooled, drop_out_prob)
 
 #Softmax Model
 with tf.name_scope("Softmax") as scope:
@@ -128,15 +128,15 @@ for step in range(steps):
         data,labels = shuffle_data(data, labels)
     data_batch = get_batch(data, step)
     labels_batch = get_batch(labels, step)
-    summary, _  = sess.run([summaries, train_op], feed_dict={sentence_placeholder:data_batch, labels_placeholder:labels_batch})
+    summary, _  = sess.run([summaries, train_op], feed_dict={sentence_placeholder:data_batch, labels_placeholder:labels_batch, drop_out_prob: KEEP_PROBABILITY})
     train_writer.add_summary(summary, step)
     print("Step "+ str(step+1) + " out of "+str(steps))
     
     if step%100 == 0:
-        print(sess.run(cross_entropy, feed_dict = {sentence_placeholder:data_batch, labels_placeholder:labels_batch}))
+        print(sess.run(cross_entropy, feed_dict = {sentence_placeholder:data_batch, labels_placeholder:labels_batch, drop_out_prob: KEEP_PROBABILITY}))
     
     if step%500 == 0:
-        summary = sess.run(summaries, feed_dict = {sentence_placeholder:test_data, labels_placeholder:test_labels})
+        summary = sess.run(summaries, feed_dict = {sentence_placeholder:test_data, labels_placeholder:test_labels, drop_out_prob: 1})
         test_writer.add_summary(summary, step)
     #Model Saving
     if (step%1000==0 and SAVE_MODEL):
@@ -147,11 +147,8 @@ model_exporter = exporter.Exporter(saver)
 model_exporter.init(
     sess.graph.as_graph_def(),
     init_op=init_op,
-    default_graph_signature = exporter.classification_signature(
-        input_tensor = sentence_placeholder,
-        classes_tensor = classes,
-        scores_tensor = soft_model),
+    default_graph_signature = exporter.classification_signature(input_tensor = sentence_placeholder,classes_tensor = classes, scores_tensor = values),
     named_graph_signatures = {
-        "inputs": exporter.generic_signature({"sentences": sentence_placeholder}),
+        "inputs": exporter.generic_signature({"sentences": sentence_placeholder, "dropout": drop_out_prob}),
         "outputs": exporter.generic_signature({"scores": soft_model})})
 model_exporter.export(export_path,tf.constant(1), sess)
