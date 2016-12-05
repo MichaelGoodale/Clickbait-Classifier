@@ -79,15 +79,11 @@ dropped_out = tf.nn.dropout(max_pooled, drop_out_prob)
 with tf.name_scope("Softmax") as scope:
     softmax_bias = bias_variable([1,2], "Softmax_Bias")
     softmax_weight = weight_variable([len(h)*FILTER_AMOUNT,2], "Softmax_Weights")
-    soft_model = tf.nn.softmax(tf.matmul(dropped_out, softmax_weight) + softmax_bias, name = "Softmax_Model")
-
-values, indices = tf.nn.top_k(soft_model, 2)
-classes = tf.contrib.lookup.index_to_string(tf.to_int64(indices), mapping=CLASS_NAMES)
+    soft_model = tf.matmul(dropped_out, softmax_weight) + softmax_bias
 
 #Cost and Training
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(labels_placeholder*tf.log(soft_model),reduction_indices=[1]))
+cross_entropy = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(soft_model, labels_placeholder))
 train_op = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy)
-
 
 #Evaluation Metrics
 with tf.name_scope("Metrics") as scope:
