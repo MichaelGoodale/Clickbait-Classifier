@@ -4,7 +4,7 @@ from tensorflow.contrib.session_bundle import exporter
 
 SAVE_MODEL = True
 LOAD_MODEL = False
-CLASS_NAMES = tf.constant(["News", "Clickbait"])
+CLASS_NAMES = tf.constant(["Clickbait", "News"])
 
 ##Model hyperparams
 KEEP_PROBABILITY = 0.5 #Drop out probability
