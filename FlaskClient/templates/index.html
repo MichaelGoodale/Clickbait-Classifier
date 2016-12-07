@@ -1,0 +1,16 @@
+{% from "_formhelpers.html" import render_field %}
+<form method=get action="/">
+  <dl>
+    {{ render_field(form.headline) }}
+  </dl>
+  <p><input type=submit value="Submit headline!"></p>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+      <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+  {% endwith %}
+</form>
