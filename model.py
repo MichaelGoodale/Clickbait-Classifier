@@ -4,7 +4,7 @@ from tensorflow.contrib.session_bundle import exporter
 
 SAVE_MODEL = True
 LOAD_MODEL = False
-CLASS_NAMES = tf.constant(["Clickbait", "News"])
+CLASS_NAMES = tf.constant(["News", "Clickbait"])
 
 ##Model hyperparams
 KEEP_PROBABILITY = 0.5 #Drop out probability
@@ -77,9 +77,9 @@ dropped_out = tf.nn.dropout(max_pooled, drop_out_prob)
 
 #Softmax Model
 with tf.name_scope("Softmax") as scope:
-    softmax_bias = bias_variable([1,2], "Softmax_Bias")
+    softmax_bias = bias_variable([2], "Softmax_Bias")
     softmax_weight = weight_variable([len(h)*FILTER_AMOUNT,2], "Softmax_Weights")
-    soft_model = tf.matmul(dropped_out, softmax_weight) + softmax_bias
+    soft_model = tf.nn.bias_add(tf.matmul(dropped_out, softmax_weight), softmax_bias)
     soft_max = tf.nn.softmax(soft_model)
 
 #Cost and Training
@@ -109,8 +109,8 @@ with tf.name_scope("Metrics") as scope:
 
 #Initalisation
 sess=tf.Session()
-init_op = tf.global_variables_initializer()
-sess.run(init_op)
+init = tf.global_variables_initializer()
+sess.run(init)
 train_writer = tf.train.SummaryWriter("Train", graph = sess.graph)
 test_writer = tf.train.SummaryWriter("Test", graph = sess.graph)
 
@@ -139,8 +139,13 @@ for step in range(steps):
     if (step%1000==0 and SAVE_MODEL):
         save = saver.save(sess, "savedModels/model.ckpt")
 
+save = saver.save(sess, "savedModels/model.ckpt")
+data_batch = get_batch(data, 1)
+labels_batch = get_batch(labels, 1)
+
 export_path = "exportedModel"
 model_exporter = exporter.Exporter(saver)
+init_op = tf.group(tf.initialize_all_tables(), name='init_op')
 model_exporter.init(
     sess.graph.as_graph_def(),
     init_op=init_op,
