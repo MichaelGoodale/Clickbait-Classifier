@@ -40,7 +40,9 @@ def main(_):
     request.inputs["sentences"].CopyFrom(tf.contrib.util.make_tensor_proto(data, dtype = tf.float32))
     request.inputs["dropout"].CopyFrom(tf.contrib.util.make_tensor_proto(np.array(1), dtype=tf.float32))
     result = stub.Predict(request, 15.0)
-    print(result)
+    scores = tf.contrib.util.make_ndarray(result.outputs["scores"])
+    classes = tf.contrib.util.make_ndarray(result.outputs["classes"])
+    print("The sentence is "+str(round(scores[0,0]*100, 3))+"% "+str(classes[0]).lower()+" and "+str(round(scores[0,1]*100, 3))+"% "+str(classes[1])).lower()
 
 if __name__ == "__main__":
     tf.app.run()
