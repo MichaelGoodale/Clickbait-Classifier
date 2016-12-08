@@ -3,25 +3,31 @@
     <head>
         <meta charset="utf-8">
         <title>Clickbait Classifier</title>
+        <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css')}}">
     </head>
     <body>
-        <div align="center">
+        <div id="content">
             {% from "_formhelpers.html" import render_field %}
             <form method=get action="/">
               <dl>
                 {{ render_field(form.headline) }}
               </dl>
               <p><input type=submit value="Submit headline!"></p>
-              {% with messages = get_flashed_messages() %}
+            </form>
+            {% with messages = get_flashed_messages() %}
               {% if messages %}
-                <ul class=flashes>
+              <ul class=flashes>
                 {% for message in messages %}
-                  <li>{{ message }}</li>
+                  <p>{{ message }}</p>
                 {% endfor %}
                 </ul>
               {% endif %}
               {% endwith %}
-            </form>
+            <div id = "clickPercentage">
+                <div id="bar"></div>
+            </div>
         </div>
+        <script type="text/javascript" src="{{ url_for('static', filename='move.js')}}" data-clickbait="{{ percentClickbait }}">
+        </script>
     </body>
 </html>

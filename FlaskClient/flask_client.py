@@ -12,13 +12,14 @@ app.secret_key = "super secret key"
 @app.route("/", methods = ["GET", "POST"])
 def home_page():
     form = ClickbaitForm(request.form)
+    scores = [0,0]
     if request.args.get("headline") is not None:
         scores, classes = grpc_get(SERVING_IP, request.args.get("headline"), SENTENCE_MAX, WORD_VECTOR_SIZE)
         values = []
         for i, o in enumerate(classes):
             values.append(str(round(scores[i]*100, 2))+"% "+str(o).lower())
         flash("\""+request.args.get("headline") + "\" is "+values[0]+" and "+values[1])
-    return render_template('index.html', form=form)
+    return render_template('index.html', form=form, percentClickbait = int(round(scores[1]*100, 2)))
 
 @app.route("/headlines/<head>")
 def show_headline(head):

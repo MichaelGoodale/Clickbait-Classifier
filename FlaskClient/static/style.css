@@ -1,0 +1,25 @@
+#content{
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+#clickPercentage {
+    position: relative;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50rem;
+    height: 2rem;
+    background-color: green;
+}
+#bar {
+    width: 1%;
+    height: 100%;
+    background-color: red;
+}
+label{
+    font-weight: bold;
+}
+body{
+    text-align:center;
+    font-family: sans-serif;
+}
