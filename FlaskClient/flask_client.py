@@ -14,8 +14,10 @@ def home_page():
     form = ClickbaitForm(request.form)
     if request.args.get("headline") is not None:
         scores, classes = grpc_get(SERVING_IP, request.args.get("headline"), SENTENCE_MAX, WORD_VECTOR_SIZE)
+        values = []
         for i, o in enumerate(classes):
-            flash(str(o) + " :"+ str(scores[i]))
+            values.append(str(round(scores[i]*100, 2))+"% "+str(o).lower())
+        flash("\""+request.args.get("headline") + "\" is "+values[0]+" and "+values[1])
     return render_template('index.html', form=form)
 
 @app.route("/headlines/<head>")

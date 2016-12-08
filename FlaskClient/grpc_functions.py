@@ -29,7 +29,7 @@ def sql_lookup(in_sentence, SENTENCE_MAX, WORD_VECTOR_SIZE):
     sentence = in_sentence.lower().strip()
     wordArray = nltk.word_tokenize(sentence)
     sentence = np.zeros((SENTENCE_MAX,WORD_VECTOR_SIZE))
-    
+    wordArray = wordArray[:SENTENCE_MAX]
     for i, word in enumerate(wordArray):
         word_string = (word,)
         cur.execute("SELECT * FROM glove WHERE field1=?", word_string)
