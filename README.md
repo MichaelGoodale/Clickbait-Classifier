@@ -4,6 +4,7 @@ This is a convolutional neural network trained to distinguish sober headlines fr
 
 The model gets 95.95% accuracy and a F1 score of 0.9705 after 5 epochs. 
 
+There is a public demo of the classifier [here](http://clickbait-classify.michaelgoodale.com/)
 ##Examples
 ###The New York Times
 ![Front page of the New York Times](https://cloud.githubusercontent.com/assets/1775699/21063799/86d88e00-be25-11e6-85fb-53ca4bcf848b.png)
