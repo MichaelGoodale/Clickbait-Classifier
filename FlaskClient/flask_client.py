@@ -32,4 +32,4 @@ if __name__ == "__main__":
     app.run()
     
 class ClickbaitForm(Form):
-    headline = StringField("Headline", [validators.Length(min=4, max=25)])
+    headline = StringField("Enter a Headline!", [validators.Length(min=4, max=25)])
