@@ -13,7 +13,7 @@
               <dl>
                 {{ render_field(form.headline) }}
               </dl>
-              <p><input type=submit value="Submit headline!"></p>
+              <p><input type=submit value="Submit"></p>
             </form>
             {% with messages = get_flashed_messages() %}
               {% if messages %}
@@ -26,16 +26,15 @@
               {% endwith %}
             <div id = "clickPercentage">
                 <div id="bar"></div>
-            </div>
-            <div id = "description">
-				<h2>What is this?</h2>
+            </div>        
+        </div>
+        <div id = "description">
+				<h2>What's this?</h2>
 				<p>Clickbait Classifier is a convolutional neural network, which is trained to distinguish clickbait headlines from more sober ones. It is an implementation in tensorflow of Yoon Kim's 2014 paper, <a href="https://arxiv.org/abs/1408.5882"> Convolutional Neural Networks for Sentence Classification</a>.</p>
             
 				<p>It is also open source! You can read the source, and learn more about it on <a href="https://github.com/SuddenlyBananas/Clickbait-Classifier">GitHub</a></p>
-            </div>
-            <div id="author-sect">
-				<a href="http://michaelgoodale.com">You can find out more about the author here</a>
-			</div>
+				
+				<p>You can find out more about the author <a href="http://michaelgoodale.com">here</a></p>
         </div>
         <script type="text/javascript" src="{{ url_for('static', filename='move.js')}}" data-clickbait="{{ percentClickbait }}">
         </script>

@@ -1,8 +1,3 @@
-#content{
-    text-align: center;
-    margin-left: auto;
-    margin-right: auto;
-}
 #clickPercentage {
     position: relative;
     margin-left: auto;
@@ -11,15 +6,28 @@
     height: 2rem;
     background-color: green;
 }
+
 #bar {
     width: 1%;
     height: 100%;
     background-color: red;
 }
+
 label{
     font-weight: bold;
 }
+
+
+#description{
+	text-align:left;
+	margin-top: 4rem;
+    margin-left: 20%;
+    margin-right: 20%;
+}
+
 body{
     text-align:center;
-    font-family: sans-serif;
+	color:#3B2936;
+	background-color: #FFFAF8;
+	font-family:"Open Sans",sans-serif;
 }
